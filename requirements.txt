@@ -40,7 +40,7 @@ incremental
 jedi
 Jinja2
 joblib
-mysqlclient
+# mysqlclient
 nest-asyncio
 networkx
 numpy

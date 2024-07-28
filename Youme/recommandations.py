@@ -3,17 +3,19 @@
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import linear_kernel
+
 from Youme.models import Profile, Préférences
+
 
 def charger_donnees_profils():
     profiles = Profile.objects.all().select_related('utilisateur')
-    data = [] 
+    data = []
     for profile in profiles:
         try:
             preferences = Préférences.objects.get(user=profile.utilisateur)
             data.append({
                 'nom': profile.utilisateur.nom,
-                'orientation' : profile.orientation,
+                'orientation': profile.orientation,
                 'interests': profile.hobbies,
                 'education': preferences.education if preferences.education else '',
                 'hobbies_pref': preferences.hobbies if preferences.hobbies else '',
@@ -23,7 +25,7 @@ def charger_donnees_profils():
         except Préférences.DoesNotExist:
             data.append({
                 'nom': profile.utilisateur.nom,
-                'orientation' : profile.orientation,
+                'orientation': profile.orientation,
                 'interests': profile.hobbies,
                 'education': '',
                 'hobbies_pref': '',
@@ -31,6 +33,7 @@ def charger_donnees_profils():
                 'physique': '',
             })
     return pd.DataFrame(data)
+
 
 def calculer_similarites(df):
     tfidf = TfidfVectorizer(tokenizer=lambda x: x.split(', '), lowercase=True)
@@ -40,19 +43,20 @@ def calculer_similarites(df):
     hobbies_pref_tfidf = tfidf.fit_transform(df['hobbies_pref'])
     lifestyle_tfidf = tfidf.fit_transform(df['lifestyle'])
     physique_tfidf = tfidf.fit_transform(df['physique'])
-    
+
     orientation_similarity = linear_kernel(orientation_tfidf, orientation_tfidf)
     interests_similarity = linear_kernel(interests_tfidf, interests_tfidf)
     education_similarity = linear_kernel(education_tfidf, education_tfidf)
     hobbies_pref_similarity = linear_kernel(hobbies_pref_tfidf, hobbies_pref_tfidf)
     lifestyle_similarity = linear_kernel(lifestyle_tfidf, lifestyle_tfidf)
     physique_similarity = linear_kernel(physique_tfidf, physique_tfidf)
-    
-    combined_similarity = ( orientation_similarity +
-        interests_similarity + education_similarity + 
-        hobbies_pref_similarity + lifestyle_similarity +
-        physique_similarity) / 6 
+
+    combined_similarity = (orientation_similarity +
+                           interests_similarity + education_similarity +
+                           hobbies_pref_similarity + lifestyle_similarity +
+                           physique_similarity) / 6
     return combined_similarity
+
 
 def suggérer_matchs(nom, combined_similarity, df):
     user_index = df[df['nom'] == nom].index[0]
@@ -62,6 +66,7 @@ def suggérer_matchs(nom, combined_similarity, df):
     similar_users_noms = df.iloc[similar_users_indices]['nom'].values
     return similar_users_noms
 
+
 def obtenir_recommandations(nom_nouvel_utilisateur):
     df = charger_donnees_profils()
     # Calculer les similarités
@@ -70,5 +75,3 @@ def obtenir_recommandations(nom_nouvel_utilisateur):
     matchs = suggérer_matchs(nom_nouvel_utilisateur, combined_similarity, df)
     matchs = matchs[:100]
     return matchs
-
-    

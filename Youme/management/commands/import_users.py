@@ -1,16 +1,19 @@
-import pandas as pd
-from django.core.management.base import BaseCommand
-from Youme.models import Utilisateur, Profile, Préférences
-from django.core.files import File
-from faker import Faker
 import os
+
+import pandas as pd
+from django.core.files import File
+from django.core.management.base import BaseCommand
+from faker import Faker
+
+from Youme.models import Profile, Préférences, Utilisateur
+
 
 class Command(BaseCommand):
     help = 'Import users and profiles from CSV file'
 
     def handle(self, *args, **kwargs):
         sample_path = "PIL1_2324_2\\Youme\\data\\youme-cleaned.csv"
-        
+
         features = ['age', 'height', 'status', 'sex', 'orientation', 'body_type', 'diet', 'drink', 'drugs', 'education', 'location', 'offspring', 'smokes', 'bio']
         sample = pd.read_csv(sample_path)
         sample = sample[features]
@@ -28,12 +31,12 @@ class Command(BaseCommand):
         female_names = [faker.first_name_female() for _ in range(int(0.4 * len(sample)))]
         used_names = set()
         used_emails = set()
-        
+
         # Mot de passe par défaut
         default_password = 'defaultpassword'
 
         # Photo de profil par défaut
-        default_photo_path = "C:\\Users\\perri\\Desktop\\WORKSPACE\\Django app\\PIL1_2324_2\\static\\images\\profile.png"  
+        default_photo_path = "C:\\Users\\perri\\Desktop\\WORKSPACE\\Django app\\PIL1_2324_2\\static\\images\\profile.png"
         # Remplacez par le chemin de votre photo par défaut
 
         for index, row in sample.iterrows():
@@ -50,23 +53,23 @@ class Command(BaseCommand):
             while name in used_names:
                 name = f"{faker.first_name_male()}{i}" if sex == 'm' else f"{faker.first_name_female()}{i}"
                 i += 1
-            
+
             used_names.add(name)
 
             email = f"{name.lower()}_youme@gmail.com"
-            
+
             # Assurez-vous que l'email est unique
             j = 1
             unique_email = email
             while unique_email in used_emails or Utilisateur.objects.filter(email=unique_email).exists():
                 unique_email = f"{name.lower()}{j}_youme@gmail.com"
                 j += 1
-            
+
             used_emails.add(unique_email)
-            
+
             # Créer l'utilisateur
             utilisateur = Utilisateur.objects.create_user(email=unique_email, nom=name, password=default_password)
-            
+
             # Créer le profil
             profile = Profile(
                 utilisateur=utilisateur,
@@ -88,17 +91,17 @@ class Command(BaseCommand):
                 langue=faker.random.choice(['Français', 'Anglais']),
                 enfant=faker.random.choice(['Oui', 'Non']),
             )
-            
+
             # Ajouter la photo de profil par défaut
             with open(default_photo_path, 'rb') as photo_file:
                 profile.photo.save(os.path.basename(default_photo_path), File(photo_file), save=True)
-            
+
             profile.save()
 
             # Créer les préférences
             preferences = Préférences(
                 user=utilisateur,
-                location=faker.random.choice(['Abidjan', 'Dakar', 'Lomé', 'Bamako', 'Ouagadougou', 'Accra', 'Cotonou','Porto-Novo', 'Abomey-Calavi', 'Ouidah']),
+                location=faker.random.choice(['Abidjan', 'Dakar', 'Lomé', 'Bamako', 'Ouagadougou', 'Accra', 'Cotonou', 'Porto-Novo', 'Abomey-Calavi', 'Ouidah']),
                 religion=faker.random.choice(['Chrétien', 'Musulman', 'Aucune', 'Autre']),
                 origin=faker.random.choice(['Côte d\'Ivoire', 'Sénégal', 'Togo', 'Mali', 'Burkina Faso', 'Ghana', 'Bénin']),
                 height=faker.random.uniform(150, 200),

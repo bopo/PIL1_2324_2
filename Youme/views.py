@@ -1,27 +1,22 @@
-from django.shortcuts import render, redirect, HttpResponse
-from django.contrib.auth import authenticate, login , logout
-from django.contrib.auth.decorators import login_required
-from django.contrib import messages
-from django.core.mail import send_mail
-# from django.contrib.auth.models import User
-from .forms import *
-from .models import *
-from PIL1_2324_2.settings import EMAIL_HOST_USER
-from django.conf import settings
-from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import get_object_or_404
-from django.utils import timezone
 import logging
-from .recommandations import obtenir_recommandations
-from .filters import *
-from django.http import Http404
-from django.db.models import Q
 
+from django.contrib import messages
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+# from django.contrib.auth.models import User
+from django.shortcuts import get_object_or_404
+from django.shortcuts import redirect, render
+from django.utils import timezone
+
+from .filters import *
+from .recommandations import obtenir_recommandations
 
 
 ########################################################## ACCUEIL #################################################################
 def accueil(request):
     return render(request, 'registration/accueil.html')
+
 
 ######################################################## AUTHENTIFICATION ##########################################################
 def inscription(request):
@@ -43,7 +38,10 @@ def inscription(request):
         form = InscriptionForm()
     return render(request, 'registration/inscription.html', {'form': form})
 
+
 logger = logging.getLogger(__name__)
+
+
 def connexion(request):
     if request.method == 'POST':
         form = ConnexionForm(request.POST)
@@ -66,15 +64,19 @@ def connexion(request):
         form = ConnexionForm()
     return render(request, 'registration/connexion.html', {'form': form})
 
+
 def deconnexion(request):
     logout(request)
     messages.success(request, 'Vous avez été déconnecté')
     return redirect('accueil')
+
+
 ########################################### FORMULAIRES PROFILS & PREFERENCES ###############################################
 def user_profile_intro(request):
     if request.method == 'POST':
         return redirect('personality_test')
     return render(request, 'formulaire/profile_intro.html')
+
 
 def personality_test(request):
     if request.method == 'POST':
@@ -83,15 +85,17 @@ def personality_test(request):
             profile = form.save(commit=False)
             profile.utilisateur = request.user
             profile.save()
-            return redirect('preferences_intro')  
+            return redirect('preferences_intro')
     else:
         form = PersonalityTestForm()
     return render(request, 'formulaire/personality_test.html', {'form': form})
+
 
 def preferences_intro(request):
     if request.method == 'POST':
         return redirect('preferences_form')
     return render(request, 'formulaire/preferences_intro.html')
+
 
 def preferences_form(request):
     if request.method == 'POST':
@@ -112,7 +116,7 @@ def preferences_form(request):
 def profile(request):
     profile = Profile.objects.get(utilisateur=request.user)
     preferences = Préférences.objects.get(user=request.user)
-    
+
     if request.method == 'POST':
         form = ProfileForm(request.POST, request.FILES, instance=profile)
         if form.is_valid():
@@ -129,12 +133,13 @@ def profile(request):
 
     return render(request, 'profile/profile.html', context)
 
+
 def profile_detail(request, pk):
     info_profil = Profile.objects.get(pk=pk)
     info_preferences = Préférences.objects.get(pk=pk)
     context = {
         "profil": info_profil,
-        "preferences" : info_preferences,
+        "preferences": info_preferences,
     }
     return render(request, "profile/profile_detail.html", context)
 
@@ -164,7 +169,7 @@ def suggestion_profiles(request):
             try:
                 profil = Profile.objects.get(utilisateur=utilisateur)
                 recommended_profiles.append({
-                    'id' : utilisateur.id,
+                    'id': utilisateur.id,
                     'nom': utilisateur.nom,
                     'image': profil.photo,
                     'sex': profil.sex,
@@ -184,11 +189,14 @@ def suggestion_profiles(request):
     age_range_min = user_age - 2
     age_range_max = user_age + 10
     if user_profile.sex == 'm' and user_profile.orientation == 'Hétérosexuel':
-        recommended_profiles = [profile for profile in recommended_profiles if profile['sex'] == 'f' and profile['age'] is not None and age_range_min <= profile['age'] <= age_range_max]
+        recommended_profiles = [profile for profile in recommended_profiles if
+                                profile['sex'] == 'f' and profile['age'] is not None and age_range_min <= profile['age'] <= age_range_max]
     elif user_profile.sex == 'f' and user_profile.orientation == 'Hétérosexuel':
-        recommended_profiles = [profile for profile in recommended_profiles if profile['sex'] == 'm' and profile['age'] is not None and age_range_min <= profile['age'] <= age_range_max]
+        recommended_profiles = [profile for profile in recommended_profiles if
+                                profile['sex'] == 'm' and profile['age'] is not None and age_range_min <= profile['age'] <= age_range_max]
     elif user_profile.orientation == 'Homosexuel':
-        recommended_profiles = [profile for profile in recommended_profiles if profile['sex'] == user_profile.sex and profile['age'] is not None and age_range_min <= profile['age'] <= age_range_max]
+        recommended_profiles = [profile for profile in recommended_profiles if
+                                profile['sex'] == user_profile.sex and profile['age'] is not None and age_range_min <= profile['age'] <= age_range_max]
     elif user_profile.orientation == 'Bisexuel':
         recommended_profiles = [profile for profile in recommended_profiles if profile['age'] is not None and age_range_min <= profile['age'] <= age_range_max]
 
@@ -208,7 +216,6 @@ def suggestion_profiles(request):
         hobbies_filter_set = set(hobbies_filter.split(', '))
         recommended_profiles = [profile for profile in recommended_profiles if hobbies_filter_set & set(profile['hobbies'].split(', '))]
 
-
     # Passer les recommandations au template
     context = {
         'form': SuggestionFilterForm(),
@@ -216,6 +223,7 @@ def suggestion_profiles(request):
         'recommended_profiles': recommended_profiles,
     }
     return render(request, 'profile/suggestion_profiles.html', context)
+
 
 @login_required
 def recherche_profiles(request):
@@ -226,10 +234,10 @@ def recherche_profiles(request):
 
     utilisateurs_filter = UserFilter(request.GET, queryset=utilisateurs)
 
-    context = {'form' : utilisateurs_filter.form,
-               'profiles' : utilisateurs_filter.qs,
-                'user' : profile
-             }
+    context = {'form': utilisateurs_filter.form,
+               'profiles': utilisateurs_filter.qs,
+               'user': profile
+               }
     return render(request, 'profile/recherche.html', context)
 
 
@@ -239,11 +247,13 @@ def discussion_list(request):
     discussions = Discussion.objects.filter(user1=request.user) | Discussion.objects.filter(user2=request.user)
     return render(request, 'chat/discussion_list.html', {'discussions': discussions})
 
+
 @login_required
 def discussion_detail(request, discussion_id):
     discussion = get_object_or_404(Discussion, id=discussion_id)
     messages = Message.objects.filter(discussion=discussion)
     return render(request, 'chat/discussion_detail.html', {'discussion': discussion, 'messages': messages})
+
 
 @login_required
 def start_chat(request, user_id):

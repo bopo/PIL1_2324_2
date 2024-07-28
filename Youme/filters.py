@@ -1,12 +1,14 @@
-from .models import * 
-from .forms import *
 import django_filters
+
+from .forms import *
+
 
 class UserFilter(django_filters.FilterSet):
     body_type = django_filters.MultipleChoiceFilter(
         choices=Profile.BodyTypeChoices.choices,
-        widget= forms.CheckboxSelectMultiple()
-        )
+        widget=forms.CheckboxSelectMultiple()
+    )
+
     class Meta:
         model = Profile
         fields = {
@@ -14,6 +16,6 @@ class UserFilter(django_filters.FilterSet):
             'sex': ['exact'],
             'orientation': ['exact'],
             # 'body_type':['exact'],  
-            'location' : ['icontains'],
+            'location': ['icontains'],
             'hobbies': ['icontains'],
         }

@@ -1,12 +1,14 @@
 # consumers.py
 import json
-from channels.generic.websocket import AsyncWebsocketConsumer
-from .models import Discussion, Message
-from django.contrib.auth import get_user_model
-from asgiref.sync import sync_to_async
 
+from asgiref.sync import sync_to_async
+from channels.generic.websocket import AsyncWebsocketConsumer
+from django.contrib.auth import get_user_model
+
+from .models import Discussion, Message
 
 User = get_user_model()
+
 
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -32,7 +34,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
         user_id = self.scope["user"].id
-        
+
         discussion = await sync_to_async(Discussion.objects.get)(id=self.discussion_id)
         sender = await sync_to_async(User.objects.get)(id=user_id)
 
